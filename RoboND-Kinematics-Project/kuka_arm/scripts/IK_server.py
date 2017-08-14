@@ -251,7 +251,7 @@ def handle_calculate_IK(req):
 
             print "Calculated (x,y,z, displacement) errors: (%f, %f, %f, %f)" %(err_px, err_py, err_pz, err_tot)
 
-            rospy.loginfo("Sent %s points. Average displacement error: %f" %(len(joint_trajectory_list), mean(err_tot)))
+            rospy.loginfo("Returned %s points. Average displacement error: %f" %(len(joint_trajectory_list), mean(err_tot)))
 
             #generate error plot after final calculation
             if len(joint_trajectory_list) == len(req.poses):
@@ -271,4 +271,3 @@ def IK_server():
 
 if __name__ == "__main__":
     IK_server()
-

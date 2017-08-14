@@ -4,7 +4,6 @@ from sympy import pi
 import matplotlib as mpl
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d import proj3d
 import matplotlib.pyplot as plt
 import pickle
 from time import strftime
@@ -17,7 +16,7 @@ alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
 class kuka_path(object):
 
     def __init__(self):
-        self.time = strftime("%Y-%m-%d_%H-%M-%S")
+        self.time = strftime("%Y-%m-%d %H:%M:%S")
         
         self.Px = []
         self.Py = []
@@ -91,18 +90,16 @@ class kuka_path(object):
         self.kuka_start_x = [0]
         self.kuka_start_y = [0]
         self.kuka_start_z = [0]
-        self.thetas_start = [self.theta1[0], self.theta2[0], self.theta3DH[0], self.theta4[0], self.theta5[0], self.theta6[0]]
         self.kuka_end_x = [0]
         self.kuka_end_y = [0]
         self.kuka_end_z = [0]
-        self.thetas_end = [self.theta1[length], self.theta2[length], self.theta3DH[length], self.theta4[length], self.theta5[length], self.theta6[length]]
 
         for trans in transforms:
-            self.kuka_start = trans.evalf(subs=sol_start, chop=True)
+            self.kuka_start = trans.evalf(subs=sol_start)
             self.kuka_start_x.append(self.kuka_start[0])
             self.kuka_start_y.append(self.kuka_start[1])
             self.kuka_start_z.append(self.kuka_start[2])
-            self.kuka_end = trans.evalf(subs=sol_end, chop=True)
+            self.kuka_end = trans.evalf(subs=sol_end)
             self.kuka_end_x.append(self.kuka_end[0])
             self.kuka_end_y.append(self.kuka_end[1])
             self.kuka_end_z.append(self.kuka_end[2])
@@ -116,32 +113,19 @@ class kuka_path(object):
         
         fig = plt.figure(figsize=(20, 14))
         mpl.rcParams['font.size'] = 16
-        ax = fig.add_subplot(111, projection='3d', xlim=[-.5,2.5], ylim=[-.75,3.], zlim=[0,2.5]) 
+        ax = fig.add_subplot(111, projection='3d', xlim=[-.5,2.5], ylim=[-.5,3.], zlim=[0,2.5]) 
         ax.view_init(elev=25, azim=210)
         
         marks = [1,2,3,4,5,6]
         
         ax.plot(self.kuka_start_x, self.kuka_start_y, self.kuka_start_z, c='grey', linestyle='--',
-                marker='D', markersize = 8,  markevery=marks, label='start position')
-        
-        for x, y, z, theta in zip(self.kuka_start_x[1:], self.kuka_start_y[1:], self.kuka_start_z[1:], self.thetas_start):
-            label = '%ddeg' % (theta*180/pi)
-            ax.text(x+.05, y-.05, z-.05, label, fontsize = 10, 
-                    bbox={'facecolor':'grey', 'alpha':0.5}, zorder = 1)
-        
+                marker='X', markersize = 12,  markevery=marks, label='start position')
         ax.plot(self.kuka_end_x, self.kuka_end_y, self.kuka_end_z, c='black', linestyle='--', 
-                marker='D', markersize = 8, markevery=marks, label='end position')
-        
-        for x, y, z, theta in zip(self.kuka_end_x[1:], self.kuka_end_y[1:], self.kuka_end_z[1:], self.thetas_end):
-            label = '%ddeg' % (theta*180/pi)
-            ax.text(x-.05, y+.05, z-.08, label, fontsize = 10, horizontalalignment='right',
-                    bbox={'facecolor':'black', 'alpha':0.5}, zorder = 1)
-            
-        p = ax.scatter(self.Px, self.Py, self.Pz, c=self.error, cmap='plasma', marker='^',
+                marker='X', markersize = 12, markevery=marks, label='end position')
+        p = ax.scatter(self.Px, self.Py, self.Pz, c=self.error, cmap='Reds', marker='^',
                    depthshade=False, label='calculated gripper positions',
-                       s = 100, vmin = 0, vmax = 1.5*(10**-15))
-        
-        ax.legend(loc=2)
+                       s = 100, vmin = 0, vmax = 10**-15)
+        ax.legend()
         
         maxerr = max(self.error)
         maxpos = self.error.index(maxerr)
@@ -155,12 +139,10 @@ class kuka_path(object):
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
-
-        plt.title(self.time)
     
 
-        plt.savefig('../../plots/'+self.time+'.png', bbox_inches='tight')
-        # plt.show()
+        plt.savefig('test.png', bbox_inches='tight')
+        plt.show()
         plt.close()
         
         return
