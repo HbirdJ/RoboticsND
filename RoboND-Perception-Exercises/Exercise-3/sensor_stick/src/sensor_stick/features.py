@@ -58,21 +58,19 @@ def compute_normal_histograms(normal_cloud):
                                           skip_nans=True):
         norm_x_vals.append(norm_component[0])
         norm_y_vals.append(norm_component[1])
-        norm_z_vals.append(norm_component[2])
+        #norm_z_vals.append(norm_component[2])
 
     # Compute histograms of normal values (just like with color)
-    max_norm = max(max(norm_x_vals),max(norm_y_vals),max(norm_z_vals))
-    min_norm = min(min(norm_x_vals),min(norm_y_vals),min(norm_z_vals))
-    print('Max: %s  Min: %s' %(max_norm,min_norm))
     nbins = 32
     bins_range = (-1,1) 
     
     norm_x_hist = np.histogram(norm_x_vals, bins=nbins, range=bins_range)
-    norm_y_hist = np.histogram(norm_x_vals, bins=nbins, range=bins_range)
-    norm_z_hist = np.histogram(norm_x_vals, bins=nbins, range=bins_range)
+    norm_y_hist = np.histogram(norm_y_vals, bins=nbins, range=bins_range)
+    # norm_z_hist = np.histogram(norm_z_vals, bins=nbins, range=bins_range)
 
     # Concatenate and normalize the histograms
-    hist_feat = np.concatenate((norm_x_hist[0], norm_y_hist[0], norm_z_hist[0])).astype(np.float64)
+    hist_feat = np.concatenate((norm_x_hist[0], norm_y_hist[0])).astype(np.float64)
+    #hist_feat = np.concatenate((norm_x_hist[0], norm_y_hist[0], norm_z_hist[0])).astype(np.float64)
     normed_features = hist_feat / np.sum(hist_feat)
 
     return normed_features
