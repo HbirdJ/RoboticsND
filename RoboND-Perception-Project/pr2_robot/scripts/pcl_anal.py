@@ -28,6 +28,8 @@ import yaml
 
 print "Finished importing modules."
 
+world_num = input("Enter the current world number: ")
+
 # Helper function to get surface normals
 def get_normals(cloud):
     get_normals_prox = rospy.ServiceProxy('/feature_extractor/get_normals', GetNormals)
@@ -142,14 +144,14 @@ def pcl_callback(pcl_msg):
 
     # Convert PCL data to ROS messages
     pcl_filtered = pcl_to_ros(cloud_pass2)
-    #pcl_objects = pcl_to_ros(cloud_objects)
-    #pcl_table = pcl_to_ros(cloud_table)
+    pcl_objects = pcl_to_ros(cloud_objects)
+    pcl_table = pcl_to_ros(cloud_table)
     pcl_clusters = pcl_to_ros(cloud_clusters)
 
     # Publish ROS messages
     pcl_filtered_pub.publish(pcl_filtered)
-    #pcl_objects_pub.publish(pcl_objects)
-    #pcl_table_pub.publish(pcl_table)
+    pcl_objects_pub.publish(pcl_objects)
+    pcl_table_pub.publish(pcl_table)
     pcl_clusters_pub.publish(pcl_clusters)
 
     # Exercise-3:
@@ -194,44 +196,97 @@ def pcl_callback(pcl_msg):
     detected_objects_pub.publish(detected_objects)
 
     # Check for duplicated object detections:
-    if len(detected_objects_list) != len(set(detected_objects_list)):
+    if len(detected_objects_labels) != len(set(detected_objects_labels)):
         print "Model detecting duplicate items. Waiting for next point cloud..."
         return
     
     try:
-        pr2_mover(detected_objects_list)
+        print("Finished pcl analysis, passing objects to mover.")
+        pr2_mover(detected_objects)
     except rospy.ROSInterruptException:
         pass
+    
+    
 
 # function to load parameters and request PickPlace service
 def pr2_mover(object_list):
 
-    # TODO: Initialize variables
+    #Initialize variables
+    objects = []
+    groups = []
+    
+    object_name = String()
+    arm_name = String()
 
-    # TODO: Get/Read parameters
+    test_scene_num = Int32()
+    test_scene_num.data = world_num
+    
+    pick_pose = Pose()
+    place_pose = Pose()
+
+    # Get/Read parameters
     object_list_param = rospy.get_param('/object_list')
+    bins = rospy.get_param('/dropbox')
 
-    # TODO: Parse parameters into individual variables
-    object_name = object_list_param[i]['name']
-    object_group = object_list_param[i]['group']
-
+    # Parse parameters into individual variables
+    for i in xrange(len(object_list_param)):
+        print("parsing object pick list #%s" %(i+1))
+        object_label = object_list_param[i]['name']
+        objects.append(object_label)
+        object_group = object_list_param[i]['group']
+        groups.append(object_group)
+    
+    pick_list = dict(zip(objects, groups))
+    
+    bin_dicts = []
+        
+    for i in xrange(len(bins)):
+        bin_group = bins[i]['group']        
+        bin_name = bins[i]['name']
+        bin_location = bins[i]['position']
+        bin_info = {"group": bin_group, "name": bin_name, "location": bin_location}
+        bin_dicts.append(bin_info)
+        
+    print(bin_dicts)
+    
     # TODO: Rotate PR2 in place to capture side tables for the collision map
+    print("Rotation code = TODO")
+    
+    dict_list = []
+    
+    # Loop through the pick list
+    for obj in objects:
+        for i in object_list:
+            if i.label == obj:
+                print("Found pick list item %s in scene" %obj)
+                
+                place_bin = pick_list[obj]
+                print("Pick list requests %s bin" %place_bin)
+                
+                bin_info = filter(lambda binned: binned['group'] == place_bin, bin_dicts)
 
-    # TODO: Loop through the pick list
-    labels = []
-    centroids = [] # to be list of tuples (x, y, z)
-    for object in objects:
-        labels.append(object.label)
-        points_arr = ros_to_pcl(object.cloud).to_array()
-        centroids.append(np.mean(points_arr, axis=0)[:3])
-
-        # TODO: Get the PointCloud for a given object and obtain it's centroid
-
-        # TODO: Create 'place_pose' for the object
-
-        # TODO: Assign the arm to be used for pick_place
-
-        # TODO: Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
+                #Get the PointCloud for a given object and obtain it's   centroid
+                points_arr = ros_to_pcl(i.cloud).to_array()
+                centroid = np.mean(points_arr, axis=0)[:3]
+                centroid_scalar = (np.asscalar(centroid[0]), np.asscalar(centroid[1]), np.asscalar(centroid[2]))
+                
+                object_name.data = obj
+                pick_pose.position.x = centroid_scalar[0]
+                pick_pose.position.y = centroid_scalar[1]
+                pick_pose.position.z = centroid_scalar[2]
+                
+                place_xyz = bin_info[0]['location']
+                place_pose.position.x = place_xyz[0]
+                place_pose.position.y = place_xyz[1]
+                place_pose.position.z = place_xyz[2]
+                
+                # Assign the arm to be used for pick_place
+                arm_name.data = bin_info[0]['name']
+                
+                # Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
+                yaml_dict = make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose)
+                print("Created yaml_dict: %s" %yaml_dict)
+                dict_list.append(yaml_dict)
 
         # Wait for 'pick_place_routine' service to come up
         rospy.wait_for_service('pick_place_routine')
@@ -240,14 +295,16 @@ def pr2_mover(object_list):
             pick_place_routine = rospy.ServiceProxy('pick_place_routine', PickPlace)
 
             # TODO: Insert your message variables to be sent as a service request
-            resp = pick_place_routine(TEST_SCENE_NUM, OBJECT_NAME, WHICH_ARM, PICK_POSE, PLACE_POSE)
+            #resp = pick_place_routine(test_scene_num, object.label, WHICH_ARM, centroid_scalar, PLACE_POSE)
 
-            print ("Response: ",resp.success)
+            #print ("Response: ",resp.success)
 
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
 
     # TODO: Output your request parameters into output yaml file
+    yaml_filename = "./pr2_robot/config/output_%s.yaml" %world_num
+    send_to_yaml(yaml_filename, dict_list)
 
 if __name__ == '__main__':
 
@@ -258,8 +315,8 @@ if __name__ == '__main__':
     pcl_sub = rospy.Subscriber("/pr2/world/points", pc2.PointCloud2, pcl_callback, queue_size=1)
 
     # Create Publishers
-    #pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
-    #pcl_table_pub = rospy.Publisher("/pcl_table", PointCloud2, queue_size=1)
+    pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
+    pcl_table_pub = rospy.Publisher("/pcl_table", PointCloud2, queue_size=1)
     pcl_clusters_pub = rospy.Publisher("/clusters", PointCloud2, queue_size=1)
     pcl_filtered_pub = rospy.Publisher("/filtered", PointCloud2, queue_size=1)
     detected_objects_pub = rospy.Publisher("/labeled", DetectedObjectsArray, queue_size=1)
