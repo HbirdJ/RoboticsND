@@ -30,23 +30,23 @@ Code found at `/pr2_robot/scripts/pcl_anal.py`
 
 | ![cloud_noise] |
 |:--:|
-| *In the real world, cameras tend to capture a lot of noise and unwanted points. We need to fix that.* |
+| *In the real world, cameras tend to capture a lot of noise and unwanted points.<br>We need to fix that.* |
 
 | ![cloud_clean] |
 |:--:|
-| *After removing outliers and scaling down the number of points, it will be much easier for our robot to analyze the scene.* |
+| *After removing outliers and scaling down the number of points, it will be much<br> easier for our robot to analyze the scene.* |
 
 | ![cloud_objects] |
 |:--:|
-| *We only care about what's on the table, so two methods were used to filter out the table and surroundings. This is still perceived by the robot as one point cloud.* |
+| *We only care about what's on the table, so two methods were used to filter out<br> the table and surroundings. This is still perceived by the robot as<br> one point cloud.* |
 
 | ![cloud_clusters] |
 |:--:|
-| *We want to analyze each object separately, so I've used a clustering algorithm to break apart each object into separate point clouds.* |
+| *We want to analyze each object separately, so I've used a clustering algorithm<br> to break apart each object into separate point clouds.* |
 
 | ![cloud_labeled] |
 |:--:|
-| *After reading the features of each object and applying a SVM model everything is labeled!* |
+| *After reading the features of each object and applying a SVM model<br> everything is labeled!* |
 
 ## Technical Details
 ### Filtering and RANSAC Plane Fitting
