@@ -77,7 +77,7 @@ Through the use of an Amazon AWS instance, over 20 models were trained and teste
 
 The following image shows the final output of the model in the right column. The left column is the input image, and the middle is the expected output. The model is most successful when following the target when it's in the center of the screen.
 
-![Example Model][results]
+![Example Model][result]
 
 The next image is a compilation of some of the models that failed to reach the .4 goal. The biggest challenge most faced was identifying the target when it was in the distance.
 
