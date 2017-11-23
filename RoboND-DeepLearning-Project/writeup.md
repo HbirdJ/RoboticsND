@@ -16,6 +16,19 @@ Based on the project guidelines, a Fully Convolutional Network is used. This all
 
 This condensed image then goes through decoder blocks that upsample the data back to its original size. The final output image weights three different classes: target, people, and neither. 
 
+### Convolution Layer Encoding
+The Convolutional layers break down the image into different parts by using pooling. As the network is trained, filters are built that match different elements of the image that the model is looking for. A filter may learn enough to recognize legs or maybe a head. In this specific application, the primary differentiating element of the target compared to the other pedestrians is the color of its clothes. Some filters likely grow primaily to identify the red hue of the target.
+
+In the downsampling process, filters are looking for local maximums. In other words, the only data passed on is from the filter being confident it found a relevant piece. Some data is lost here, but connected layers (discussed later) help perserve some of this lost information.
+
+### 1x1 Convolutional Layer
+After the original image has been analyzed by the filters and reduced by pooling through multiple layers, every filter value is broken out into a single list of values. Each of these values is making its own prediction on what part of the input image may contain. This is passed onto the decoding blocks to determine.
+
+A standard convolutional network would use a fully connected layer here where all the values effectively submit a vote which determines how likely the input is to contain an expected output. Maintaining spacial data for these 1x1 votes so positional knowledge is maintained creates a fully convolutional network.
+
+### Convolutional Layers Decoding
+Upsampling is required to bring the pooled image back up to full size with the output predictions intact. Intuition suggests you'll be loosing significant fidelity, but fortunately the data is travelling back through the deep set of filters involved which help rebuild the image's fidelity.
+
 ## Neural Network Architecture
 
 Using the functions built in the semantic segmentation lab, the following fully convolutional network was built:
